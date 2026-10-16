@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="لوحة نور">
+<meta name="theme-color" content="#0d5a4a">
+<title>لوحة نور</title>
+<style>
+  :root {
+    --bg: #f6f3ec; --card: #ffffff; --ink: #1d2a26; --muted: #6b746f; --line: #e3ddd0;
+    --accent: #0d5a4a; --accent-ink: #ffffff; --gold: #b8894a; --danger: #b3261e; --ok: #1e7a46;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0f1513; --card: #18201d; --ink: #e9ece9; --muted: #9aa5a0; --line: #2a3430;
+            --accent: #2f9a80; --gold: #d4aa6a; --danger: #ef6b62; --ok: #4cc27f; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 system-ui, "Segoe UI", Tahoma, sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 24px 16px 64px; }
+  h1 { margin: 0 0 4px; font-size: 26px; }
+  h2 { margin: 0 0 12px; font-size: 19px; color: var(--gold); }
+  .muted { color: var(--muted); font-size: 14px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; margin-top: 16px; }
+  label { display: block; font-size: 14px; color: var(--muted); margin: 10px 0 4px; }
+  input, textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg); color: var(--ink); font: inherit; }
+  textarea { min-height: 96px; resize: vertical; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .row > * { flex: 1 1 180px; }
+  button { font: inherit; border: 0; border-radius: 10px; padding: 10px 16px; cursor: pointer; background: var(--accent); color: var(--accent-ink); }
+  button.secondary { background: transparent; color: var(--accent); border: 1px solid var(--line); }
+  button.danger { background: transparent; color: var(--danger); border: 1px solid var(--line); }
+  button:disabled { opacity: .5; cursor: default; }
+  .item { border-top: 1px solid var(--line); padding: 12px 0; }
+  .item:first-child { border-top: 0; }
+  .item h3 { margin: 0; font-size: 17px; }
+  .pill { display: inline-block; font-size: 12px; padding: 2px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); }
+  .pill.on { color: var(--ok); border-color: var(--ok); }
+  .msg { margin-top: 10px; font-size: 14px; min-height: 1em; }
+  .msg.error { color: var(--danger); } .msg.ok { color: var(--ok); }
+  .hidden { display: none !important; }
+  header { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .checkbox { display: flex; gap: 8px; align-items: center; margin-top: 10px; color: var(--ink); }
+  .checkbox input { width: auto; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div>
+      <h1>لوحة نور</h1>
+      <div class="muted">الإعلانات والإشعارات فقط. نصوص القرآن والحديث والأذكار لا تُعدَّل من هنا.</div>
+    </div>
+    <button id="signOut" class="secondary hidden">تسجيل الخروج</button>
+  </header>
+
+  <!-- ------------------------------------------------ sign in -->
+  <section id="login" class="card hidden">
+    <h2>تسجيل الدخول</h2>
+    <form id="loginForm">
+      <label for="email">البريد الإلكتروني للمشرف</label>
+      <input id="email" type="email" required autocomplete="username" dir="ltr">
+      <label for="password">كلمة المرور</label>
+      <input id="password" type="password" required autocomplete="current-password" dir="ltr">
+      <div class="row" style="margin-top:12px"><button type="submit">دخول</button></div>
+    </form>
+    <div id="loginMsg" class="msg"></div>
+  </section>
+
+  <div id="app" class="hidden">
+    <!-- ------------------------------------------------ push -->
+    <section class="card">
+      <h2>إرسال إشعار</h2>
+      <div class="muted" id="devices">…</div>
+      <form id="pushForm">
+        <label for="pushTitle">العنوان</label>
+        <input id="pushTitle" maxlength="120" required>
+        <label for="pushBody">النص</label>
+        <textarea id="pushBody" maxlength="1000" required></textarea>
+        <div class="row" style="margin-top:12px"><button type="submit" id="pushBtn">إرسال لكل المستخدمين</button></div>
+      </form>
+      <div id="pushMsg" class="msg"></div>
+      <h2 style="margin-top:20px">آخر الإشعارات</h2>
+      <div id="pushHistory" class="muted">…</div>
+    </section>
+
+    <!-- ------------------------------------------------ announcements -->
+    <section class="card">
+      <h2 id="annFormTitle">إعلان جديد في الصفحة الرئيسية</h2>
+      <form id="annForm">
+        <input type="hidden" id="annId">
+        <label for="annTitle">العنوان</label>
+        <input id="annTitle" maxlength="120" required>
+        <label for="annBody">النص</label>
+        <textarea id="annBody" maxlength="2000"></textarea>
+        <label for="annLink">رابط (اختياري، يبدأ بـ https://)</label>
+        <input id="annLink" type="url" pattern="https://.*" dir="ltr">
+        <div class="row">
+          <div><label for="annStart">يبدأ (اختياري)</label><input id="annStart" type="datetime-local"></div>
+          <div><label for="annEnd">ينتهي (اختياري)</label><input id="annEnd" type="datetime-local"></div>
+          <div><label for="annOrder">الترتيب</label><input id="annOrder" type="number" value="0"></div>
+        </div>
+        <label class="checkbox"><input id="annActive" type="checkbox" checked> ظاهر للمستخدمين</label>
+        <div class="row" style="margin-top:12px">
+          <button type="submit">حفظ</button>
+          <button type="button" id="annCancel" class="secondary hidden">إلغاء التعديل</button>
+        </div>
+      </form>
+      <div id="annMsg" class="msg"></div>
+      <h2 style="margin-top:20px">كل الإعلانات</h2>
+      <div id="annList" class="muted">…</div>
+    </section>
+  </div>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<script>
+const { SUPABASE_URL, SUPABASE_ANON_KEY } = window.NOOR_ADMIN_CONFIG;
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const $ = (id) => document.getElementById(id);
+const say = (el, text, kind = "") => { el.textContent = text; el.className = "msg " + kind; };
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = (d) => d ? new Date(d).toLocaleString("ar", { dateStyle: "medium", timeStyle: "short" }) : "";
+const toLocalInput = (d) => d ? new Date(new Date(d).getTime() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 16) : "";
+const fromLocalInput = (v) => v ? new Date(v).toISOString() : null;
+
+// ------------------------------------------------ auth
+async function render() {
+  const { data: { session } } = await sb.auth.getSession();
+  $("login").classList.toggle("hidden", !!session);
+  $("app").classList.toggle("hidden", !session);
+  $("signOut").classList.toggle("hidden", !session);
+  if (!session) return;
+  const { data: isAdmin } = await sb.rpc("noor_is_admin");
+  if (isAdmin !== true) {
+    await sb.auth.signOut();
+    say($("loginMsg"), "هذا الحساب ليس مشرفًا.", "error");
+    return render();
+  }
+  loadDevices(); loadHistory(); loadAnnouncements();
+}
+
+$("loginForm").onsubmit = async (e) => {
+  e.preventDefault();
+  say($("loginMsg"), "جارٍ الدخول…");
+  const { error } = await sb.auth.signInWithPassword({ email: $("email").value.trim(), password: $("password").value });
+  if (error) return say($("loginMsg"), "البريد أو كلمة المرور غير صحيحة.", "error");
+  $("password").value = "";
+  say($("loginMsg"), "");
+  render();
+};
+$("signOut").onclick = async () => { await sb.auth.signOut(); render(); };
+
+// ------------------------------------------------ push
+async function loadDevices() {
+  const { data } = await sb.rpc("noor_device_count");
+  $("devices").textContent = `عدد الأجهزة المسجلة: ${data ?? 0}. يظهر الإشعار فقط لمن سمح بالإشعارات في التطبيق.`;
+}
+async function loadHistory() {
+  const { data, error } = await sb.from("noor_push_messages").select("*").order("created_at", { ascending: false }).limit(20);
+  if (error) return $("pushHistory").textContent = error.message;
+  $("pushHistory").innerHTML = data.length ? data.map((m) => `
+    <div class="item"><h3>${esc(m.title)}</h3><div>${esc(m.body)}</div>
+    <div class="muted">${fmt(m.created_at)} • ${m.status === "sent" ? "أُرسل" : m.status === "failed" ? "فشل" : "قيد الإرسال"} • وصل ${m.sent_count} • تعذر ${m.failed_count}</div></div>`).join("")
+    : "لا توجد إشعارات بعد.";
+}
+$("pushForm").onsubmit = async (e) => {
+  e.preventDefault();
+  const title = $("pushTitle").value.trim(), body = $("pushBody").value.trim();
+  if (!confirm(`سيُرسل هذا الإشعار لكل المستخدمين:\n\n${title}\n${body}\n\nمتابعة؟`)) return;
+  $("pushBtn").disabled = true; say($("pushMsg"), "جارٍ الإرسال…");
+  const { data, error } = await sb.functions.invoke("noor-send-push", { body: { title, body } });
+  $("pushBtn").disabled = false;
+  if (error) {
+    const detail = await error.context?.json?.().catch(() => null);
+    return say($("pushMsg"), "تعذر الإرسال: " + (detail?.error ?? error.message), "error");
+  }
+  const why = data.reasons && Object.keys(data.reasons).length ? ` السبب من Apple: ${Object.entries(data.reasons).map(([r, n]) => `${r} (${n})`).join("، ")}` : "";
+  say($("pushMsg"), `أُرسل إلى ${data.sent} جهاز${data.failed ? `، وتعذر ${data.failed}` : ""}.${why}`, data.failed ? "error" : "ok");
+  $("pushForm").reset(); loadHistory(); loadDevices();
+};
+
+// ------------------------------------------------ announcements
+let announcements = [];
+async function loadAnnouncements() {
+  const { data, error } = await sb.from("noor_announcements").select("*").order("sort_order").order("created_at", { ascending: false });
+  if (error) return $("annList").textContent = error.message;
+  announcements = data;
+  const now = Date.now();
+  const live = (a) => a.is_active && (!a.starts_at || new Date(a.starts_at) <= now) && (!a.ends_at || new Date(a.ends_at) > now);
+  $("annList").innerHTML = data.length ? data.map((a) => `
+    <div class="item">
+      <div class="row" style="justify-content:space-between">
+        <h3>${esc(a.title)} <span class="pill ${live(a) ? "on" : ""}">${live(a) ? "ظاهر الآن" : "مخفي"}</span></h3>
+        <div class="row" style="flex:0 0 auto">
+          <button class="secondary" onclick="editAnn('${a.id}')">تعديل</button>
+          <button class="danger" onclick="deleteAnn('${a.id}')">حذف</button>
+        </div>
+      </div>
+      <div>${esc(a.body)}</div>
+      ${a.link_url ? `<div dir="ltr" class="muted">${esc(a.link_url)}</div>` : ""}
+      <div class="muted">${a.starts_at ? "من " + fmt(a.starts_at) + " " : ""}${a.ends_at ? "إلى " + fmt(a.ends_at) : ""}</div>
+    </div>`).join("") : "لا توجد إعلانات بعد.";
+}
+function resetAnnForm() {
+  $("annForm").reset(); $("annId").value = ""; $("annActive").checked = true; $("annOrder").value = 0;
+  $("annFormTitle").textContent = "إعلان جديد في الصفحة الرئيسية"; $("annCancel").classList.add("hidden");
+}
+window.editAnn = (id) => {
+  const a = announcements.find((x) => x.id === id); if (!a) return;
+  $("annId").value = a.id; $("annTitle").value = a.title; $("annBody").value = a.body; $("annLink").value = a.link_url ?? "";
+  $("annStart").value = toLocalInput(a.starts_at); $("annEnd").value = toLocalInput(a.ends_at);
+  $("annOrder").value = a.sort_order; $("annActive").checked = a.is_active;
+  $("annFormTitle").textContent = "تعديل إعلان"; $("annCancel").classList.remove("hidden");
+  $("annForm").scrollIntoView({ behavior: "smooth" });
+};
+window.deleteAnn = async (id) => {
+  if (!confirm("حذف هذا الإعلان نهائيًا؟")) return;
+  const { error } = await sb.from("noor_announcements").delete().eq("id", id);
+  if (error) return say($("annMsg"), error.message, "error");
+  say($("annMsg"), "حُذف.", "ok"); loadAnnouncements();
+};
+$("annCancel").onclick = resetAnnForm;
+$("annForm").onsubmit = async (e) => {
+  e.preventDefault();
+  const row = {
+    title: $("annTitle").value.trim(), body: $("annBody").value.trim(), link_url: $("annLink").value.trim() || null,
+    starts_at: fromLocalInput($("annStart").value), ends_at: fromLocalInput($("annEnd").value),
+    sort_order: Number($("annOrder").value) || 0, is_active: $("annActive").checked,
+  };
+  const id = $("annId").value;
+  const { error } = id ? await sb.from("noor_announcements").update(row).eq("id", id) : await sb.from("noor_announcements").insert(row);
+  if (error) return say($("annMsg"), "تعذر الحفظ: " + error.message, "error");
+  say($("annMsg"), "حُفظ. يظهر في التطبيق عند فتحه.", "ok"); resetAnnForm(); loadAnnouncements();
+};
+
+sb.auth.onAuthStateChange(() => {});
+render();
+</script>
+</body>
+</html>
